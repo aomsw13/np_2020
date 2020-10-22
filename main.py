@@ -6,40 +6,48 @@
 from tkinter import *
 from tkinter import ttk
 
+def clicked_DNS():
+    lable = Label(window, text="Welcome to DNS", font=("Arial Bold", 20))
+    lable.grid(column=1, row=0)
+
+
+def clicked_FTP():
+    lable = Label(window, text="Welcome to FTP", font=("Arial Bold", 20))
+    lable.grid(column=1, row=0)
+
+
+def clicked_Email():
+    lable = Label(window, text="Welcome to Email", font=("Arial Bold", 20))
+    lable.grid(column=1, row=0)
+
+
+def clicked_Web():
+    lable = Label(window, text="Welcome to Web", font=("Arial Bold", 20))
+    lable.grid(column=1, row=0)
+
+# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     window = Tk()
 
     window.title("Welcome to ITCS428 Project")
+
     window.geometry('750x450')
 
-    tabControl = ttk.Notebook(window)
+    lbl = Label(window, text="Menu", font=("Arial Bold", 20), bg="grey", width=7, height=2)
+    lbl.grid(column=0, row=0)
 
-    dnsTab = ttk.Frame(tabControl)
-    ftpTab = ttk.Frame(tabControl)
-    emailTab = ttk.Frame(tabControl)
-    webTab = ttk.Frame(tabControl)
+    btn_DNS = Button(window, text="DNS", command=clicked_DNS, width=10, height=2)
+    btn_DNS.grid(column=0, row=1)
 
-    tabControl.add(dnsTab, text='DNS')
-    tabControl.add(ftpTab, text='FTP')
-    tabControl.add(emailTab, text='Email')
-    tabControl.add(webTab, text='Web')
-    tabControl.pack(expand=1, fill="both")
+    btn_FTP = Button(window, text="FTP", command=clicked_FTP, width=10, height=2)
+    btn_FTP.grid(column=0, row=2)
 
-    ttk.Label(dnsTab,
-              text="Welcome to \
-    GeeksForGeeks").grid(column=0,
-                         row=0,
-                         padx=30,
-                         pady=30)
+    btn_Email = Button(window, text="Email", command=clicked_Email, width=10, height=2)
+    btn_Email.grid(column=0, row=3)
 
-    # lable = Label(dnsTab, text="DNS", font=("Arial Bold", 10)).place(x=375, y=20)
-    # # lable.grid(column=2, row=0)
-    # search = Label(dnsTab, text="Search:").place(x=255, y=50)
-    # v = StringVar()
-    # input = Entry(dnsTab, width=25, textvariable=v)
-    # input.pack()
-    # input.grid(column=1, row=0)
-    # input = v.get()
-    # goBtn = Button(dnsTab, text="Go!", command=goDNS(input)).place(x=450, y=47)
+    btn_Web = Button(window, text="Web", command=clicked_Web, width=10, height=2)
+    btn_Web.grid(column=0, row=4)
 
     window.mainloop()
+
+    # See PyCharm help at https://www.jetbrains.com/help/pycharm/
