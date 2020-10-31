@@ -20,24 +20,51 @@ import socket, socketserver
 # For FTP Part
 import os, time, struct
 
+
 def searchDns():
     lable.configure(text="DNS : ")
-    # Find MX Record
-    mail = dns.resolver.query(inputDns.get(), 'MX')
+
+    # IPv4 Records
+    ipv4 = dns.resolver.resolve(inputDns.get(), 'A')
+    title_ipv4 = ttk.Label(text='IPv4 Record for %s is: ' % inputDns.get())
+    title_ipv4.pack()
+    for data in ipv4:
+        output_ipv4 = ttk.Label(text=data.to_text())
+        output_ipv4.pack()
+
+    # IPv6 Records
+    ipv6 = dns.resolver.resolve(inputDns.get(), 'AAAA')
+    title_ipv6 = ttk.Label(text='IPv6 Record for %s is: ' % inputDns.get())
+    title_ipv6.pack()
+    for data in ipv6:
+        output_ipv6 = ttk.Label(text=data.to_text())
+        output_ipv6.pack()
+
+    # MX Records
+    mail = dns.resolver.resolve(inputDns.get(), 'MX')
     title_MX = ttk.Label(text='MX Record for %s is: ' % inputDns.get())
     title_MX.pack()
     for data in mail:
         output_mail = ttk.Label(text=data.exchange.to_text())
         output_mail.pack()
-        
+
+    # NS Records
+    name = dns.resolver.resolve(inputDns.get(), 'NS')
+    title_NS = ttk.Label(text='NS Record for %s is: ' % inputDns.get())
+    title_NS.pack()
+    for data in name:
+        output_name = ttk.Label(text=data.to_text())
+        output_name.pack()
+
     # Find FQDN 
-    
 
 
 def now():
     return time.ctime(time.time())
 
+
 BUFFER_SIZE = 1024
+
 
 # create connection fro ftp client
 def conn(file):
@@ -52,12 +79,13 @@ def conn(file):
     try:
         s.connect((TCP_IP, TCP_PORT))
         print("Connection sucessful")
-        temp_status = upload_server(file,s)
+        temp_status = upload_server(file, s)
     except:
         print("Connection unsucessful. Make sure the server is online.")
     return temp_status
 
-def upload_server(file_name,s):
+
+def upload_server(file_name, s):
     # Upload a file
     file_name = file_name.encode()
     print("\nUploading file: {}...".format(file_name))
@@ -111,9 +139,9 @@ def upload_server(file_name,s):
         return "Cannot upload file to server"
     return "Success to upload file to server"
 
+
 # open file dialog to allow a user select file to upload
 def uploadFile(input_entry):
-
     # file = open("users.txt", "w")
     # user_Input = text_File.get()
     # file.write(user_Input)
@@ -132,16 +160,15 @@ def uploadFile(input_entry):
     # insert new_text at position 0
     input_entry.insert(0, new_text)
 
-    upload_status = conn(filename) # create connection to ftp server
+    upload_status = conn(filename)  # create connection to ftp server
 
     print(upload_status)
 
     lable_success = Label(ftpTab, text=upload_status, font=("Arial Bold", 15))
-    lable_success.grid(column=2, row=4)     
+    lable_success.grid(column=2, row=4)
 
 
 if __name__ == '__main__':
-    
     window = Tk()
 
     window.title("Welcome to ITCS428 Project")
@@ -161,7 +188,6 @@ if __name__ == '__main__':
     tabControl.pack(expand=1, fill="both")
 
     # DNS Tab
-
     lable = Label(dnsTab, text="DNS : ")
     lable.pack()
     lable.grid(column=0, row=0)
@@ -180,12 +206,5 @@ if __name__ == '__main__':
 
     btnFtp = Button(ftpTab, text="Upload", command=lambda: uploadFile(inputFtp))
     btnFtp.grid(column=2, row=0)
-
-    # ttk.Label(dnsTab,
-    #           text="Welcome to \
-    # GeeksForGeeks").grid(column=0,
-    #                      row=0,
-    #                      padx=30,
-    #                      pady=30)
 
     window.mainloop()
