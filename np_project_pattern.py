@@ -25,6 +25,7 @@ import os, time, struct, sys
 from email.parser import BytesParser, Parser
 from email.policy import default
 
+# DNS
 def searchDns():
     lable.configure(text="DNS : ")
     # IPv4 Records
@@ -70,30 +71,43 @@ def searchDns():
 def now():
     return time.ctime(time.time())
 
-BUFFER_SIZE = 1024
+#FTP: Initialise socket stuff
+TCP_IP = "10.98.4.146"  # Only a local server
+TCP_PORT = 8000  # Just a random choice
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+BUFFER_SIZE = 1024  # Standard chioce
 
-# create connection for ftp client
-def conn(file, status):
-    # Initialise socket stuff
-    TCP_IP = "192.168.1.40"  # Only a local server
-    TCP_PORT = 8000  # Just a random choice
-    # BUFFER_SIZE = 1024  # Standard chioce
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Connect to the server
+# FTP: create connection between ftp client and ftp server
+def conn():
     print("Sending server request...")
     try:
         s.connect((TCP_IP, TCP_PORT))
         print("Connection sucessful")
-        if(status == 'upload'):
-            temp_status = upload_server(file,s)
-        #elif(status == 'download'):
-            #temp_status = download_(file)
+        # temp_status = upload_server(file,s)
     except:
         print("Connection unsucessful. Make sure the server is online.")
-    return temp_status
+    # return temp_status
 
-def upload_server(file_name,s):
+# FTP: open dialog file from computer
+def openDialogFile(input_entry):
+    # initaildir="<Your Server Path>"
+    file1 = filedialog.askopenfile(initialdir="/Users/supakarn/PycharmProjects/np_2020")
+    filename = os.path.basename(str(file1.name))
+
+    label_file = Label(ftpTab, text=filename, font=("Arial Bold", 10))
+    label_file.grid(column=1, row=3)
+
+    # define new text (you can modify this to your needs!)
+    new_text = str(filename)
+    # delete content from position 0 to end
+    input_entry.delete(0, tk.END)
+    # insert new_text at position 0
+    input_entry.insert(0, new_text)
+
+    return filename
+
+# FTP: start sending a file to server from client
+def upload_server(file_name):
     # Upload a file
     file_name = file_name.encode()
     print("\nUploading file: {}...".format(file_name))
@@ -147,38 +161,87 @@ def upload_server(file_name,s):
         return "Cannot upload file to server"
     return "Success to upload file to server"
 
-# open file dialog to allow a user select file to upload
-def uploadFile(input_entry):
-
-    # file = open("users.txt", "w")
-    # user_Input = text_File.get()
-    # file.write(user_Input)
-    # file.close()
-
-    file1 = filedialog.askopenfile()
-    filename = os.path.basename(str(file1.name))
-
-    label_file = Label(ftpTab, text=filename, font=("Arial Bold", 10))
-    label_file.grid(column=1, row=3)
-
-    # define new text (you can modify this to your needs!)
-    new_text = str(filename)
-    # delete content from position 0 to end
-    input_entry.delete(0, tk.END)
-    # insert new_text at position 0
-    input_entry.insert(0, new_text)
-
-    upload_status = conn(filename,'upload') # create connection to ftp server
+# FTP: open file dialog to allow a user select file to upload
+def listUploadFile(input_entry):
+    # open file dialog
+    selected_file = openDialogFile(input_entry)
+    # create connection to ftp server first
+    conn()
+    # return status whether client can upload file to server or not
+    upload_status = upload_server(selected_file)
 
     print(upload_status)
 
-    lable_success = Label(ftpTab, text=upload_status)
-    lable_success.grid(column=1, row=4)  
+    lable_success = Label(ftpTab, text=upload_status, font=("Arial Bold", 15))
+    lable_success.grid(column=1, row=7)
     messagebox.showinfo("Upload Success!", upload_status)   
 
+# FTP: list all files from server to client for download
+def listDownloadFile(input_entry):
+    # open file dialog
+    selected_file = openDialogFile(input_entry)
+    # create connection to ftp server first
+    conn()
+
+    download_status = download_server(selected_file)
+
+    lable_success = Label(ftpTab, text=download_status, font=("Arial Bold", 15))
+    lable_success.grid(column=1, row=7)
+    messagebox.showinfo("Download Success!", download_status)
+
+# FTP: start download file from server to client
+def download_server(file_name):
+    # Download given file
+    print("Downloading file: {}".format(file_name))
+    try:
+        # Send server request
+        s.send("DWLD".encode())
+    except:
+        print("Couldn't make server request. Make sure a connection has bene established.")
+        return
+    try:
+        print('ready to receive')
+        # Wait for server ok, then make sure file exists
+        s.recv(BUFFER_SIZE)
+        # Send file name length, then name
+        s.send(struct.pack("h", sys.getsizeof(file_name)))
+        s.send(file_name.encode())
+        # Get file size (if exists)
+        file_size = struct.unpack("i", s.recv(4))[0]
+        if file_size == -1:
+            # If file size is -1, the file does not exist
+            print("File does not exist. Make sure the name was entered correctly")
+            return
+    except:
+        print("Error checking file")
+    try:
+        # Send ok to recieve file content
+        s.send("1".encode())
+        # Enter loop to recieve file
+        output_file = open('out'+file_name, "wb")
+        bytes_recieved = 0
+        print("\nDownloading...")
+        while bytes_recieved < file_size:
+            # Again, file broken into chunks defined by the BUFFER_SIZE variable
+            l = s.recv(BUFFER_SIZE)
+            output_file.write(l)
+            bytes_recieved += BUFFER_SIZE
+        output_file.close()
+        print("Successfully downloaded {}".format(file_name))
+        # Tell the server that the client is ready to recieve the download performance details
+        s.send("1".encode())
+        # Get performance details
+        time_elapsed = struct.unpack("f", s.recv(4))[0]
+        print("Time elapsed: {}s\nFile size: {}b".format(time_elapsed, file_size))
+    except:
+        print("Error downloading file")
+        return "client can not download file"
+    return "Success to download file from server"
+
+# Email
 def sending (from_add, to_add, subject, message):
        
-    myHost = '192.168.1.40'
+    myHost = '10.98.4.146'
     myPort = 8080
     sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
     sockobj.bind((myHost, myPort)) 
@@ -199,6 +262,10 @@ def sending (from_add, to_add, subject, message):
             message = str(headers).encode('utf-8') + data
             connection.send(message)
     connection.close()
+
+    lable_success = Label(emailTab, text="Email is sent to client", font=("Arial Bold", 15))
+    lable_success.grid(column=1, row=7)
+    messagebox.showinfo("Success!!")
 
 if __name__ == '__main__':
     
@@ -225,7 +292,7 @@ if __name__ == '__main__':
     lable = Label(dnsTab, text="DNS : ")
     lable.pack()
     lable.grid(column=0, row=0)
-    inputDns = Entry(dnsTab, width=50)
+    inputDns = Entry(dnsTab, width=25)
     inputDns.grid(column=1, row=0)
 
     btnDns = Button(dnsTab, text="Search", command=searchDns)
@@ -235,20 +302,21 @@ if __name__ == '__main__':
     lable = Label(ftpTab, text="Select File ")
     lable.pack()
     lable.grid(column=0, row=0)
-    inputFtp = Entry(ftpTab, width=45)
+    inputFtp = Entry(ftpTab, width=25)
     inputFtp.grid(column=1, row=0)
 
-    btnFtp_upload = Button(ftpTab, text="Upload", command=lambda: uploadFile(inputFtp))
+    btnFtp_upload = Button(ftpTab, text="Upload", command=lambda: listUploadFile(inputFtp))
     btnFtp_upload.grid(column=2, row=0)
 
-    btnFtp_download = Button(ftpTab, text="Download", command=lambda: '')
+    btnFtp_download = Button(ftpTab, text="Download", command=lambda: listDownloadFile(inputFtp))
     btnFtp_download.grid(column=3, row=0)
+
 
     # Email Tab
     lable = Label(emailTab, text="From ")
     lable.pack()
     lable.grid(column=0, row=1)
-    inputFrom = Entry(emailTab, width=50)
+    inputFrom = Entry(emailTab, width=25)
     inputFrom.grid(column=1, row=1)
 
     lable = Label(emailTab, text="To ")
