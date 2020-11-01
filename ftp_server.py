@@ -4,6 +4,8 @@ import sys
 import time
 import os
 import struct
+import fnmatch
+
 
 print("\nWelcome to the FTP server.\n\nTo get started, connect a client.")
 
@@ -29,7 +31,7 @@ def upld():
     file_size = struct.unpack("i", conn.recv(4))[0]
     # Initialise and enter loop to recive file content
     start_time = time.time()
-    output_file = open('testimg_output.jpg', "wb")
+    output_file = open("file_name.jpg", "wb")
     # This keeps track of how many bytes we have recieved, so we know when to stop the loop
     bytes_recieved = 0
     print("\nRecieving...")
@@ -47,6 +49,68 @@ def upld():
     conn.close()
     return
 
+def list_files():
+    print("Listing files...")
+    # Get list of files in directory
+    listing = os.listdir(os.getcwd())
+    print('file listing ', listing ,len(listing))
+    # Send over the number of files, so the client knows what to expect (and avoid some errors)
+    conn.send(struct.pack("i", len(listing)))
+    total_directory_size = 0
+    # Send over the file names and sizes whilst totaling the directory size
+    for i in listing:
+        # temp = fnmatch.fnmatch(i, '*.py')
+        #print(temp)
+        # if temp == False:
+        # print('server is sending detetail of file')
+        # File name size
+        conn.send(struct.pack("i", sys.getsizeof(i)))
+        # File name
+        print('server send file ', i.encode())
+        conn.send(i.encode())
+        # File content size
+        conn.send(struct.pack("i", os.path.getsize(i)))
+        total_directory_size += os.path.getsize(i)
+        # Make sure that the client and server are syncronised
+        conn.recv(BUFFER_SIZE)
+        # print('syn ', serverget.decode())
+    # Sum of file sizes in directory
+    conn.send(struct.pack("i", total_directory_size))
+    #Final check
+    conn.recv(BUFFER_SIZE)
+    print("Successfully sent file listing")
+    return
+
+def dwld():
+    conn.send("1".encode())
+    file_name_length = struct.unpack("h", conn.recv(2))[0]
+    print(file_name_length)
+    file_name = conn.recv(file_name_length)
+    print(file_name.decode())
+    if os.path.isfile(file_name):
+        # Then the file exists, and send file size
+        conn.send(struct.pack("i", os.path.getsize(file_name)))
+    else:
+        # Then the file doesn't exist, and send error code
+        print("File name not valid")
+        conn.send(struct.pack("i", -1))
+        return
+    # Wait for ok to send file
+    conn.recv(BUFFER_SIZE)
+    # Enter loop to send file
+    start_time = time.time()
+    print("Sending file...")
+    content = open(file_name, "rb")
+    # Again, break into chunks defined by BUFFER_SIZE
+    l = content.read(BUFFER_SIZE)
+    while l:
+        conn.send(l)
+        l = content.read(BUFFER_SIZE)
+    content.close()
+    # Get client go-ahead, then send download details
+    conn.recv(BUFFER_SIZE)
+    conn.send(struct.pack("f", time.time() - start_time))
+    return
 
 while True:
     # Enter into a while loop to recieve commands from client
@@ -60,7 +124,7 @@ while True:
     # Check the command and respond correctly
     if data.decode() == "UPLD":
         upld()
-    elif data == "LIST":
+    elif data.decode() == "LIST":
         list_files()
     elif data == "DWLD":
         dwld()
