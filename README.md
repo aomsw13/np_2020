@@ -4,6 +4,8 @@
 - np_project_pattern.py: GUI that interact with user
 - Email part: it performs as email server
 - FTP part: it performs as client
+- DNS part: display IPv4, IPv6, and MX record 
+
 
 ### FTP
 - ftp_server.py: running ftp server and waiting connection from client to Upload and Download files
