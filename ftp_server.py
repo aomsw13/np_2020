@@ -10,7 +10,7 @@ import fnmatch
 print("\nWelcome to the FTP server.\n\nTo get started, connect a client.")
 
 # Initialise socket stuff
-TCP_IP = "10.98.4.36" # Only a local server
+TCP_IP = "10.98.4.146" # Only a local server
 TCP_PORT = 8000 # Just a random choice
 BUFFER_SIZE = 1024 # Standard size
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -31,7 +31,7 @@ def upld():
     file_size = struct.unpack("i", conn.recv(4))[0]
     # Initialise and enter loop to recive file content
     start_time = time.time()
-    output_file = open("file_name.jpg", "wb")
+    output_file = open("out_file_name.jpg", "wb")
     # This keeps track of how many bytes we have recieved, so we know when to stop the loop
     bytes_recieved = 0
     print("\nRecieving...")
@@ -49,41 +49,42 @@ def upld():
     conn.close()
     return
 
-def list_files():
-    print("Listing files...")
-    # Get list of files in directory
-    listing = os.listdir(os.getcwd())
-    print('file listing ', listing ,len(listing))
-    # Send over the number of files, so the client knows what to expect (and avoid some errors)
-    conn.send(struct.pack("i", len(listing)))
-    total_directory_size = 0
-    # Send over the file names and sizes whilst totaling the directory size
-    for i in listing:
-        # temp = fnmatch.fnmatch(i, '*.py')
-        #print(temp)
-        # if temp == False:
-        # print('server is sending detetail of file')
-        # File name size
-        conn.send(struct.pack("i", sys.getsizeof(i)))
-        # File name
-        print('server send file ', i.encode())
-        conn.send(i.encode())
-        # File content size
-        conn.send(struct.pack("i", os.path.getsize(i)))
-        total_directory_size += os.path.getsize(i)
-        # Make sure that the client and server are syncronised
-        conn.recv(BUFFER_SIZE)
-        # print('syn ', serverget.decode())
-    # Sum of file sizes in directory
-    conn.send(struct.pack("i", total_directory_size))
-    #Final check
-    conn.recv(BUFFER_SIZE)
-    print("Successfully sent file listing")
-    return
+# def list_files():
+#     print("Listing files...")
+#     # Get list of files in directory
+#     listing = os.listdir(os.getcwd())
+#     print('file listing ', listing ,len(listing))
+#     # Send over the number of files, so the client knows what to expect (and avoid some errors)
+#     conn.send(struct.pack("i", len(listing)))
+#     total_directory_size = 0
+#     # Send over the file names and sizes whilst totaling the directory size
+#     for i in listing:
+#         # temp = fnmatch.fnmatch(i, '*.py')
+#         #print(temp)
+#         # if temp == False:
+#         # print('server is sending detetail of file')
+#         # File name size
+#         conn.send(struct.pack("i", sys.getsizeof(i)))
+#         # File name
+#         print('server send file ', i.encode())
+#         conn.send(i.encode())
+#         # File content size
+#         conn.send(struct.pack("i", os.path.getsize(i)))
+#         total_directory_size += os.path.getsize(i)
+#         # Make sure that the client and server are syncronised
+#         conn.recv(BUFFER_SIZE)
+#         # print('syn ', serverget.decode())
+#     # Sum of file sizes in directory
+#     conn.send(struct.pack("i", total_directory_size))
+#     #Final check
+#     conn.recv(BUFFER_SIZE)
+#     print("Successfully sent file listing")
+#     return
 
 def dwld():
-    conn.send("1".encode())
+    conn.send("server send ok 1".encode())
     file_name_length = struct.unpack("h", conn.recv(2))[0]
+    print('heelo server')
     print(file_name_length)
     file_name = conn.recv(file_name_length)
     print(file_name.decode())
@@ -112,6 +113,8 @@ def dwld():
     conn.send(struct.pack("f", time.time() - start_time))
     return
 
+
+
 while True:
     # Enter into a while loop to recieve commands from client
     conn, addr = s.accept()
@@ -126,5 +129,7 @@ while True:
         upld()
     elif data.decode() == "LIST":
         list_files()
-    elif data == "DWLD":
+    elif data.decode() == "DWLD":
         dwld()
+    elif data.decode() == "QUIT":
+        quit()
