@@ -1,10 +1,9 @@
-# np_2020
 from tkinter import*
 from tkinter import messagebox
 import tkinter
-from tkinter import Menu
-from tkinter import filedialog
-import sys
+# from tkinter import Menu
+
+# import sys
 from email.parser import BytesParser, Parser
 from email.policy import default
 from socket import *
@@ -120,6 +119,8 @@ class Window2:
         
         self.from_add=Entry(self.frame)
         self.from_add.grid(row=1,column=1)
+
+
         self.text_to=Label(self.frame,text='To')
         self.text_to.grid(row=2,column=0)
 
@@ -129,14 +130,18 @@ class Window2:
         self.subject_text.grid(row=3,column=0)
         self.subject=Entry(self.frame)
         self.subject.grid(row=3,column=1)
+
         self.message=Text(self.frame, width= 50,height= 10)
         self.message.grid(row=4,column=1)
+
+        self.upload = Entry(self.frame)
+        self.upload.grid(row=5,column=1)
 
         #butoon
         # self.upload=Button(self.frame,text="upload",fg='red',command = self.openfile)
         # self.upload.grid(row=5,column=1)
         self.Button1=Button(self.frame,text="Submit",fg='red', command = self.sending)
-        self.Button1.grid(row=5,column=1)
+        self.Button1.grid(row=6,column=1)
         ###################### imge
     # def openfile(self):
     #     self.file=filedialog.askopenfilename()
@@ -156,7 +161,15 @@ class Window2:
                 'Subject:'+self.subject.get() +'\n'
                 '\n'
                 +(self.message.get('1.0',END))+'\n')
-        print(self.headers)
+        # print(str(self.headers))
+        # print(type(self.headers))
+        
+        self.f = open("data.txt",'a',encoding='utf8')
+        # self.f.write('---------------------------------------------\n')
+        self.f.write(str(self.headers))
+        # self.f.write('\n---------------------------------------------\n')
+        self.f.close()
+        
         while True:
             self.connection, self.address = self.sockobj.accept() 
             print ('Server connected by', self.address)
@@ -164,6 +177,7 @@ class Window2:
                 self.data = self.connection.recv(1024)
                 if not self.data: break
                 self.message = str(self.headers).encode('utf-8') + self.data
+             
                 self.connection.send(self.message)
         self.connection.close()
         # print('To: {}'.format(self.headers['To']))
